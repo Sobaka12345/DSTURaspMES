@@ -30,8 +30,12 @@ Page {
         text: qsTr("CREATED BY EGOR MASLOV<br>ver 1.2 (\\/)_(*,,,*)_(\\/)")
         horizontalAlignment: Text.AlignRight
     }
-
+Flickable{
+    width: parent.width
+    height: parent.height
+    contentHeight: collt.height
     ColumnLayout {
+        id: collt
         width: parent.width
         Layout.alignment: Qt.AlignHCenter
         x: 0
@@ -102,13 +106,12 @@ Page {
         }
         ColumnLayout {
             Layout.alignment: Qt.AlignHCenter
-            width: 280
+            width: parent.width
 
             Text {
                 id: elementP
                 text: qsTr("#!@$% Преподавателя")
                 Layout.preferredHeight: 25
-                Layout.preferredWidth: 139
                 horizontalAlignment: Text.AlignHCenter
                 font.family: "Tahoma"
                 font.pixelSize: 21
@@ -116,7 +119,7 @@ Page {
 
             Rectangle {
                 id: rectangleP
-                width: parent.width
+                width: 280
                 height: 28
                 color: "#ffffff"
 
@@ -164,7 +167,7 @@ Page {
             }
         }
 
-
+}
 }
 
 
