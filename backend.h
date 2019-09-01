@@ -16,13 +16,13 @@ class Backend : public QObject
     Q_OBJECT
 
     Q_PROPERTY(QList<QObject*> upDataList READ getUpData NOTIFY upDataChanged)
+    Q_PROPERTY(QList<QObject*> downDataList READ getDownData NOTIFY downDataChanged)
     QList<QObject*> upDataList;
 
-    Q_PROPERTY(QList<QObject*> downDataList READ getDownData NOTIFY downDataChanged)
     QList<QObject*> downDataList;
 
     QString getTime(QString & row);
-    QString getDayInfo(QString & row, bool & flag);
+    QString getDayInfo(QString & row, int & flag);
 
 public:
     explicit Backend(QObject *parent = nullptr);
@@ -36,7 +36,7 @@ signals:
 
 
 public slots:
-    void loadSchedule(QString gr_id);
+    void loadSchedule(QString txt);
 
 private slots:
     void replyFinished(QNetworkReply * reply);

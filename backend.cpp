@@ -2,13 +2,10 @@
 
 Backend::Backend(QObject *parent) : QObject(parent)
 {
-    QTextCodec * codec = QTextCodec::codecForName("Windows-1251");
-    QTextDecoder * decoder = new QTextDecoder(codec);
-
     QFile upFile("upper.week");
-    if(!upFile.open(QIODevice::ReadOnly))
+    if(!upFile.open(QIODevice::ReadWrite))
         exit(-69);
-    QString upWeek = decoder->toUnicode(upFile.readAll());
+    QString upWeek = upFile.readAll();
     upFile.close();
     int count = upWeek.count('~');
     for(int i = 0; i < count; i++)
@@ -26,9 +23,9 @@ Backend::Backend(QObject *parent) : QObject(parent)
     }
 
     QFile downFile("bottom.week");
-    if(!downFile.open(QIODevice::ReadOnly))
+    if(!downFile.open(QIODevice::ReadWrite))
         exit(-69);
-    QString downWeek = decoder->toUnicode(downFile.readAll());
+    QString downWeek = downFile.readAll();
     downFile.close();
     count = downWeek.count('~');
     for(int i = 0; i < count; i++)
@@ -42,16 +39,18 @@ Backend::Backend(QObject *parent) : QObject(parent)
         index = downWeek.indexOf('~');
         QString day = downWeek.left(index);
         downWeek = downWeek.remove(0, index + 1);
-        upDataList.append(new ListEl(info, time, day.toInt()));
+        downDataList.append(new ListEl(info, time, day.toInt()));
     }
-
-    delete decoder;
 }
 
-void Backend::loadSchedule(QString gr_id)
+void Backend::loadSchedule(QString txt)
 {
-    QString url("https://edu.donstu.ru/Rasp/RaspFull.aspx?group=");
-    url += gr_id;
+    QString url;
+    if(txt.toInt())
+        url = "https://edu.donstu.ru/Rasp/RaspFull.aspx?group=";
+    else
+        url = "https://edu.donstu.ru/Rasp/RaspFull.aspx?prep=";
+    url += txt;
 
     QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
     connect(mgr, SIGNAL(finished(QNetworkReply*)),
@@ -103,7 +102,7 @@ void Backend::replyFinished(QNetworkReply * reply)
             for(i = index; (*it)[i] != '>' && i != it->indexOf("rowspan",i); i++);
             *it = it->remove(index, i - index);
         }
-        bool flag = false;
+        int flag = 0;
         if(!twice)
         {
             if(it->mid(it->indexOf('<'), 15).contains("rowspan")) {
@@ -122,10 +121,12 @@ void Backend::replyFinished(QNetworkReply * reply)
             for (int i = 0; i < 6; i++)
             {
                 QString upper = getDayInfo(*temp, flag);
-                if(flag)
-                    pairs.last()->pushDay(upper, getDayInfo(*it, flag), i);
-                else
+                if(flag == 0)
                     pairs.last()->pushDay(upper, "", i);
+                else if(flag == 2)
+                    pairs.last()->pushDay(upper, upper, i);
+                else if(flag == 1)
+                    pairs.last()->pushDay(upper, getDayInfo(*it, flag), i);
             }
             twice = false;
         }
@@ -162,7 +163,7 @@ void Backend::replyFinished(QNetworkReply * reply)
     QFile downFile("bottom.week");
     if(!downFile.open(QIODevice::WriteOnly))
         exit(-69);
-    stream.setDevice(&downFile);
+    QTextStream bstream(&downFile);
     for(auto x : pairs)
     {
         auto down = x->getDownWeek();
@@ -177,15 +178,16 @@ void Backend::replyFinished(QNetworkReply * reply)
         for(auto x : inter[i])
         {
             downDataList.append(x);
-            stream << x->getTime() << '|';
-            stream << x->getInfo() << '|';
-            stream << x->getDayNumber() << '~';
+            bstream << x->getTime() << '|';
+            bstream << x->getInfo() << '|';
+            bstream << x->getDayNumber() << '~';
         }
         inter[i].clear();
     }
     downFile.close();
 
     emit upDataChanged();
+    emit downDataChanged();
 
     delete decoder;
     for(auto x: pairs)
@@ -201,16 +203,19 @@ QString Backend::getTime(QString &row)
     return slice;
 }
 
-QString Backend::getDayInfo(QString &row, bool &flag)
+QString Backend::getDayInfo(QString &row, int &flag)
 {
     int chopIndex = row.indexOf("</td>");
     QString slice = row.mid(0, chopIndex);
     row = row.remove(0, chopIndex + 5);
     if(!slice.contains("rowspan"))
-        flag = true;
+        flag = 1;
+    else if(slice.contains("br"))
+        flag = 2;
     else
-        flag = false;
+        flag = 0;
     slice = slice.remove(0, slice.indexOf(">") + 1);
+
     return slice;
 }
 

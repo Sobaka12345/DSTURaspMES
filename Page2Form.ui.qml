@@ -22,11 +22,11 @@ Page {
     }
 
     Rectangle{
-        id: container
+        id: containerb
         anchors.fill: parent
 
         Component {
-            id: sectionHeading
+            id: sectionHeadingb
             Rectangle {
                 width: parent.width
                 height: childrenRect.height
@@ -44,9 +44,9 @@ Page {
         }
 
         ListView {
-            id: listView
+            id: listViewb
             anchors.fill: parent
-            model: backend.upDataList
+            model: backend.downDataList
 
             delegate: RowLayout {
                 width: parent.width
@@ -81,7 +81,7 @@ Page {
 
             section.property: "modelData.day"
             section.criteria: ViewSection.FullString
-            section.delegate: sectionHeading
+            section.delegate: sectionHeadingb
 
         }
     }

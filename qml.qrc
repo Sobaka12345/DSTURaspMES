@@ -7,5 +7,6 @@
         <file>qtquickcontrols2.conf</file>
         <file>Page3.qml</file>
         <file>example.PNG</file>
+        <file>example2.png</file>
     </qresource>
 </RCC>
