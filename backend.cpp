@@ -46,6 +46,19 @@ Backend::Backend(QObject *parent) : QObject(parent)
 void Backend::loadSchedule(QString txt)
 {
     QString url;
+    QFile info("info.week");
+    info.open(QIODevice::ReadWrite);
+    if(txt == "update")
+    {
+        txt = info.readAll();
+    }
+    else
+    {
+        QTextStream out(&info);
+        out << txt;
+    }
+    info.close();
+
     if(txt.toInt())
         url = "https://edu.donstu.ru/Rasp/RaspFull.aspx?group=";
     else

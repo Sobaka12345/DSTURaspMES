@@ -107,7 +107,6 @@ Page {
             Text {
                 id: elementP
                 text: qsTr("#!@$% Преподавателя")
-                anchors.fill: parent
                 Layout.preferredHeight: 25
                 Layout.preferredWidth: 139
                 horizontalAlignment: Text.AlignHCenter
@@ -143,7 +142,7 @@ Page {
             Button {
                 id: buttonP
                 width: parent.width
-                anchors.horizontalCenter: parent.horizontalCenter
+                Layout.alignment: Text.AlignHCenter
                 text: qsTr("Загрузить")
                 Layout.preferredHeight: 28
                 Layout.preferredWidth: 139
@@ -152,7 +151,19 @@ Page {
                 onClicked: backend.loadSchedule(textInputP.text)
             }
         }
-    }
+
+            Button {
+                id: updateB
+                padding: 20
+                width: parent.width
+                Layout.alignment: Text.AlignHCenter
+                text: qsTr("Обновить")
+                font.family: "Tahoma"
+                font.pointSize: 15
+                onClicked: backend.loadSchedule("update")
+            }
+        }
+
 
 }
 
