@@ -7,13 +7,29 @@ Page {
     width: 600
     height: 400
     focusPolicy: Qt.StrongFocus
+    background: Rectangle {
+            color: "#f7f7e2"
+    }
 
     header: Label {
         text: qsTr("Настройки")
-        font.pixelSize: Qt.application.font.pixelSize * 2
+        color: "white"
+        font.pointSize: 16
+        background: Rectangle {
+            color: "#4f4e47"
+            anchors.fill: parent
+        }
+        font.family: "Verdana"
         padding: 10
     }
 
+    footer: Label {
+        id: creator
+        padding: 10
+        rightPadding: 15
+        text: qsTr("CREATED BY EGOR MASLOV<br>ver 1.2 (\\/)_(*,,,*)_(\\/)")
+        horizontalAlignment: Text.AlignRight
+    }
 
     ColumnLayout {
         width: parent.width
@@ -69,6 +85,7 @@ Page {
 
             Button {
                 id: button
+                width: parent.width
                 text: qsTr("Загрузить")
                 Layout.preferredHeight: 28
                 Layout.preferredWidth: 139
@@ -125,6 +142,8 @@ Page {
 
             Button {
                 id: buttonP
+                width: parent.width
+                anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Загрузить")
                 Layout.preferredHeight: 28
                 Layout.preferredWidth: 139
@@ -134,6 +153,7 @@ Page {
             }
         }
     }
+
 }
 
 

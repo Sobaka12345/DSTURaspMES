@@ -2,8 +2,6 @@ import QtQuick 2.12
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
-
-
 Page {
     id: lol
     width: 600
@@ -11,30 +9,35 @@ Page {
 
     header: Label {
         text: qsTr("Верхняя неделя")
+        color: "white"
         font.pointSize: 16
         background: Rectangle {
-            color: "white"
-                    anchors.fill: parent
+            color: "#4f4e47"
+            anchors.fill: parent
         }
         styleColor: "#00000000"
         font.family: "Verdana"
         padding: 10
     }
 
-    Rectangle{
+    Rectangle {
         id: container
+        width: parent.width
         anchors.fill: parent
-
+        color: "#f7f7e2"
         Component {
             id: sectionHeading
             Rectangle {
                 width: parent.width
                 height: childrenRect.height
-                color: "lightsteelblue"
+                color:  "#466874"
 
                 Text {
+                    padding: 5
+                    leftPadding: 10
                     text: section
-                    font.bold: true
+                    color: "white"
+                    font.bold: false
                     font.pixelSize: 20
                     wrapMode: "WordWrap"
                     verticalAlignment: Text.AlignVCenter
@@ -58,8 +61,8 @@ Page {
                     Layout.preferredHeight: implicitHeight + 10
                     Layout.preferredWidth: parent.width * 0.2
                     background: Rectangle {
-                        border.color: "black"
-                        color: "grey"
+                        border.color: "#301c0c"
+                        color: "#9f926e"
                     }
                     text: model.modelData.time
                     wrapMode: "WordWrap"
@@ -71,7 +74,10 @@ Page {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
                     Layout.preferredHeight: implicitHeight + 10
-                    background: Rectangle { border.color: "black" }
+                    background: Rectangle {
+                        border.color: "#301c0c"
+                        color: "#f7f7e2"
+                    }
                     text: model.modelData.info
                     wrapMode: "WordWrap"
                     verticalAlignment: Text.AlignVCenter
@@ -82,28 +88,6 @@ Page {
             section.property: "modelData.day"
             section.criteria: ViewSection.FullString
             section.delegate: sectionHeading
-
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
