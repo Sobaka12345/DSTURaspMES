@@ -26,7 +26,7 @@ Page {
             id: element1
             anchors.right: parent.right
             y: parent.height * 0.15
-            width: 100
+            width: 115
             height: 29
             color: "#ffffff"
             text: qsTr("ver 2.1 (\\/)_(*,,,*)_(\\/)<br>by Egor MustLove")
