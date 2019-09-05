@@ -34,7 +34,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     backend.h \
     pair.h \
-    list_el.h
+    list_el.h \
+    prep_el.h
 
 DISTFILES += \
     android/AndroidManifest.xml \

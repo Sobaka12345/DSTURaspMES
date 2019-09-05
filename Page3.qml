@@ -6,9 +6,9 @@ Page {
     id: opts
     width: 600
     height: 400
-    focusPolicy: Qt.StrongFocus
+    focusPolicy: Qt.ClickFocus
     background: Rectangle {
-            color: "#f7f7e2"
+        color: "#f7f7e2"
     }
 
     header: Label {
@@ -21,39 +21,35 @@ Page {
         }
         font.family: "Verdana"
         padding: 10
-    }
 
-    footer: Label {
-        id: creator
-        padding: 10
-        rightPadding: 15
-        text: qsTr("CREATED BY EGOR MASLOV<br>ver 1.2 (\\/)_(*,,,*)_(\\/)")
-        horizontalAlignment: Text.AlignRight
-    }
-Flickable{
-    width: parent.width
-    height: parent.height
-    contentHeight: collt.height
-    ColumnLayout {
-        id: collt
-        width: parent.width
-        Layout.alignment: Qt.AlignHCenter
-        x: 0
-        y: 0
-
-        Image {
-            id: groupId
-            width: opts.width
-            Layout.fillWidth: true
-            source: "qrc:///example.PNG"
+        Text {
+            id: element1
+            anchors.right: parent.right
+            y: parent.height * 0.15
+            width: 100
+            height: 29
+            color: "#ffffff"
+            text: qsTr("ver 2.1 (\/)_(*,,,*)_(\/)<br>by Egor MustLove")
+            font.pixelSize: 11
         }
+    }
+
+    Flickable{
+        width: parent.width
+        height: parent.height
+        flickableDirection:Flickable.VerticalFlick
+
 
         ColumnLayout {
-            width: parent.width
-            Layout.alignment: Qt.AlignHCenter
+            spacing: 0.5
+            anchors.bottomMargin: 0
+            anchors.fill: parent
+
             Text {
                 id: element
-                text: qsTr("id группы")
+                text: qsTr("Группа")
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
                 Layout.preferredHeight: 25
                 Layout.preferredWidth: 139
                 horizontalAlignment: Text.AlignHCenter
@@ -63,112 +59,147 @@ Flickable{
 
             Rectangle {
                 id: rectangle
-                width: 139
-                height: 28
+                height: 26
                 color: "#ffffff"
+                border.color: "#a4a4a4"
+                border.width: 1
+                Layout.fillWidth: true
 
                 TextInput {
+
                     id: textInput
+                    height: 3
                     color: "#000000"
                     text: ""
                     anchors.fill: parent
-                    Layout.preferredHeight: 28
-                    Layout.preferredWidth: 139
-                    maximumLength: 5
+                    validator: RegExpValidator { regExp: /[0-9А-Яа-я ]+/ }
                     cursorVisible: true
-                    font.weight: Font.ExtraLight
                     horizontalAlignment: Text.AlignLeft
                     selectionColor: "#00801c"
                     font.family: "Tahoma"
                     font.pixelSize: 21
-                    validator: IntValidator{bottom: 0; top: 99999;}
-                    focus: true
-                    inputMethodHints: Qt.ImhDigitsOnly
                 }
             }
 
             Button {
                 id: button
-                width: parent.width
+                height: 32
                 text: qsTr("Загрузить")
-                Layout.preferredHeight: 28
-                Layout.preferredWidth: 139
+                Layout.fillWidth: true
                 font.family: "Tahoma"
                 font.pointSize: 15
-                onClicked: backend.loadSchedule(textInput.text)
+                onClicked: backend.loadId(textInput.text, 1)
             }
-        }
-        Image {
-            id: prepName
-            width: opts.width
-            Layout.fillWidth: true
-            source: "qrc:///example2.png"
-        }
-        ColumnLayout {
-            Layout.alignment: Qt.AlignHCenter
-            width: parent.width
 
             Text {
                 id: elementP
-                text: qsTr("#!@$% Преподавателя")
-                Layout.preferredHeight: 25
+                text: qsTr("Поиск преподавателя")
+                wrapMode: Text.WordWrap
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                Layout.preferredHeight: 32
                 horizontalAlignment: Text.AlignHCenter
                 font.family: "Tahoma"
                 font.pixelSize: 21
             }
 
-            Rectangle {
-                id: rectangleP
-                width: 280
-                height: 28
-                color: "#ffffff"
+            RowLayout {
+                height: 32
 
-                TextInput {
-                    id: textInputP
-                    color: "#000000"
-                    text: ""
-                    clip: true
-                    anchors.fill: parent
-                    Layout.preferredHeight: 28
-                    Layout.preferredWidth: parent.width
-                    maximumLength: 100
-                    cursorVisible: true
-                    font.weight: Font.ExtraLight
-                    horizontalAlignment: Text.AlignLeft
-                    selectionColor: "#008080"
-                    font.family: "Tahoma"
-                    font.pixelSize: 21
-                    focus: true
+                ComboBox {
+                    id: comboPrep
+                    height: 32
+                    font.pixelSize: 16
+                    Layout.preferredHeight: 26
+                    transformOrigin: Item.Center
+                    Layout.fillWidth: true
+                    validator: RegExpValidator { regExp: /[А-Яа-я ]+/ }
+                    editable: true
+                    model: backend.prepList
+                    textRole: "name"
+                    focusPolicy: Qt.NoFocus
+                    onAccepted: activeFocus = false
+
+
+                    AnimatedImage {
+                        id: load
+                        visible: false
+                        z: 1000
+                        x:parent.width - 50
+                        y: 3
+                        width: 20
+                        height: 20
+                        fillMode: Image.PreserveAspectFit
+                        source: "qrc:///load.gif"
+                    }
+
+                    Label {
+
+                        Layout.preferredHeight: implicitHeight + 10
+                        Layout.preferredWidth: parent.width
+                        background: Rectangle {
+                            border.color: "#301c0c"
+                            color: "#9f926e"
+                        }
+                        wrapMode: "WordWrap"
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+
+                    onModelChanged:
+                    {
+                        load.visible = false
+                        backend.setIndex(model[0].id)
+                    }
+                    onActivated: {
+                        backend.setIndex(model[index].id)
+                    }
+                }
+
+                Button {
+                    id: search
+                    height: 32
+                    text: "Поиск"
+                    Layout.preferredHeight: 26
+                    Layout.preferredWidth: 100
+                    onClicked: {
+                        load.visible = comboPrep.editText != ""
+                        backend.searchPreps(comboPrep.editText)
+                    }
                 }
             }
 
+
+
+
+
             Button {
                 id: buttonP
-                width: parent.width
+                height: 32
                 Layout.alignment: Text.AlignHCenter
                 text: qsTr("Загрузить")
-                Layout.preferredHeight: 28
-                Layout.preferredWidth: 139
+                Layout.fillWidth: true
                 font.family: "Tahoma"
                 font.pointSize: 15
-                onClicked: backend.loadSchedule(textInputP.text)
+                onClicked: backend.loadSchedule("")
             }
-        }
 
             Button {
                 id: updateB
                 padding: 20
-                width: parent.width
-                Layout.alignment: Text.AlignHCenter
-                text: qsTr("Обновить")
+                text: qsTr("Обновить расписание")
+                Layout.fillWidth: true
                 font.family: "Tahoma"
                 font.pointSize: 15
-                onClicked: backend.loadSchedule("update")
+                onClicked: {
+                    backend.update()
+                }
             }
+
+
         }
-
+    }
 }
-}
 
 
 
@@ -190,7 +221,33 @@ Flickable{
 
 
 
-/*##^## Designer {
-    D{i:7;anchors_x:0;anchors_y:30}D{i:13;anchors_height:28;anchors_width:139}
-}
- ##^##*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

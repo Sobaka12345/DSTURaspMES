@@ -6,7 +6,6 @@
         <file>main.qml</file>
         <file>qtquickcontrols2.conf</file>
         <file>Page3.qml</file>
-        <file>example.PNG</file>
-        <file>example2.png</file>
+        <file>load.gif</file>
     </qresource>
 </RCC>

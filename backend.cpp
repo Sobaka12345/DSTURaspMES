@@ -1,8 +1,8 @@
 #include "backend.h"
 
-Backend::Backend(QObject *parent) : QObject(parent)
+void Backend::readWeekFile(QString file, QList<QObject *> &dest)
 {
-    QFile upFile("upper.week");
+    QFile upFile(file);
     if(!upFile.open(QIODevice::ReadWrite))
         exit(-69);
     QString upWeek = upFile.readAll();
@@ -16,54 +16,105 @@ Backend::Backend(QObject *parent) : QObject(parent)
         index = upWeek.indexOf('|');
         QString info = upWeek.left(index);
         upWeek = upWeek.remove(0, index + 1);
+        index = upWeek.indexOf('|');
+        QString prep = upWeek.left(index);
+        upWeek = upWeek.remove(0, index + 1);
+        index = upWeek.indexOf('|');
+        QString aud = upWeek.left(index);
+        upWeek = upWeek.remove(0, index + 1);
+        index = upWeek.indexOf('|');
+        QString weekType = upWeek.left(index);
+        upWeek = upWeek.remove(0, index + 1);
         index = upWeek.indexOf('~');
         QString day = upWeek.left(index);
         upWeek = upWeek.remove(0, index + 1);
-        upDataList.append(new ListEl(info, time, day.toInt()));
-    }
 
-    QFile downFile("bottom.week");
-    if(!downFile.open(QIODevice::ReadWrite))
-        exit(-69);
-    QString downWeek = downFile.readAll();
-    downFile.close();
-    count = downWeek.count('~');
-    for(int i = 0; i < count; i++)
-    {
-        int index = downWeek.indexOf('|');
-        QString time = downWeek.left(index);
-        downWeek = downWeek.remove(0, index + 1);
-        index = downWeek.indexOf('|');
-        QString info = downWeek.left(index);
-        downWeek = downWeek.remove(0, index + 1);
-        index = downWeek.indexOf('~');
-        QString day = downWeek.left(index);
-        downWeek = downWeek.remove(0, index + 1);
-        downDataList.append(new ListEl(info, time, day.toInt()));
+        dest.append(new ListEl(info,time,day,prep,aud,weekType.toInt()));
     }
 }
 
-void Backend::loadSchedule(QString txt)
+Backend::Backend(QObject *parent) : QObject(parent)
 {
-    QString url;
-    QFile info("info.week");
-    info.open(QIODevice::ReadWrite);
-    if(txt == "update")
-    {
-        txt = info.readAll();
-    }
-    else
-    {
-        QTextStream out(&info);
-        out << txt;
-    }
-    info.close();
+    readWeekFile("upper.week", upDataList);
+    readWeekFile("bottom.week", downDataList);
 
-    if(txt.toInt())
-        url = "https://edu.donstu.ru/Rasp/RaspFull.aspx?group=";
-    else
-        url = "https://edu.donstu.ru/Rasp/RaspFull.aspx?prep=";
-    url += txt;
+    QFile weekFile("week.week");
+    if(weekFile.exists())
+    {
+        firstLaunch = false;
+        weekFile.open(QIODevice::ReadWrite);
+        QString w = weekFile.readAll();
+        int type = w.left(1).toInt();
+        currentWeek = (bool)type;
+        w = w.remove(0,2);
+        int wDay = w.left(1).toInt();
+        w = w.remove(0,2);
+        w = w.remove(w.indexOf("~"), 1);
+        int yDay = w.toInt();
+        int curYDay = QDate::currentDate().dayOfYear();
+        qDebug() << type;
+        if((8 - wDay) <= curYDay - yDay)
+        {
+            currentWeek = !type;
+            QTextStream wfStream(&weekFile);
+            wfStream << currentWeek << "|"
+                     << QDate::currentDate().dayOfWeek() << "|"
+                     << QDate::currentDate().dayOfYear() << "~";
+        }
+        weekFile.close();
+    } else {
+       firstLaunch = true;
+       currentWeek = false;
+    }
+    emit curWeekChanged();
+    emit launchChanged();
+}
+
+void Backend::loadId(QString txt, int mode)
+{
+    raspObj = txt;
+    raspMode = mode;
+    QString url("https://edu.donstu.ru/api/Raspgrouplist");
+
+    QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
+    connect(mgr, SIGNAL(finished(QNetworkReply*)),
+            this, SLOT(loadSchedule(QNetworkReply*)));
+
+    mgr->get(QNetworkRequest(QUrl(url)));
+
+}
+
+void Backend::setIndex(QString id)
+{
+    prepId = id;
+    raspMode = 2;
+}
+
+void Backend::loadSchedule(QNetworkReply * reply)
+{
+    QString url("https://edu.donstu.ru/api/Rasp?");
+    if(raspMode == 1)
+    {
+        QString groups = reply->readAll();
+        int index = groups.indexOf(raspObj.toUpper(), Qt::CaseSensitivity::CaseInsensitive);
+        if(index == -1)
+            return;
+        else
+        {
+            int i;
+            for(i = index + raspObj.length(); !groups[i].isDigit(); i++);
+            QString gr_id;
+            while(groups[i].isDigit())
+                gr_id += groups[i++];
+            url += "idGroup=" + gr_id;
+        }
+    }
+    else if(raspMode == 2 && prepId != "")
+    {
+       url += "idPrepodLine=" + prepId;
+    }
+    else return;
+
 
     QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
     connect(mgr, SIGNAL(finished(QNetworkReply*)),
@@ -71,6 +122,70 @@ void Backend::loadSchedule(QString txt)
 
     mgr->get(QNetworkRequest(QUrl(url)));
 }
+
+void Backend::update()
+{
+        QFile infFile("info.week");
+        if(!infFile.open(QIODevice::ReadOnly))
+            return;
+        QString inf = infFile.readAll();
+        raspMode = inf.left(1).toInt();
+        if(raspMode == 1)
+        {
+            raspObj = inf.remove(0,2);
+            QString url("https://edu.donstu.ru/api/Raspgrouplist");
+
+            QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
+            connect(mgr, SIGNAL(finished(QNetworkReply*)),
+                    this, SLOT(loadSchedule(QNetworkReply*)));
+
+            mgr->get(QNetworkRequest(QUrl(url)));
+        }
+        else if(raspMode == 2)
+        {
+            prepId = inf.remove(0,2);
+            loadSchedule(nullptr);
+        }
+        else return;
+}
+
+int Backend::checkIdentical(ListEl * el1, ListEl* el2)
+{
+    int out = 0;
+        if(*el1 == *el2){
+            out = 1;
+        }
+    if(out == 1 && (el1->getAud() == el2->getAud()))
+        out = 2;
+    return out;
+}
+
+void Backend::addToList(QList<QObject *> &list, QMap<QString, QVariant> & map)
+{
+    auto insert = new ListEl(map.find("дисциплина")->toString() + "<br>",
+                             map.find("начало")->toString() + " - " + map.find("конец")->toString(),
+                             map.find("дата")->toString() == "" ? map.find("день_недели")->toString() : map.find("дата")->toString().left(10),
+                             raspMode == 1 ? map.find("преподаватель")->toString() + "<br>" : "",
+                             map.find("аудитория")->toString(),
+                             map.find("типНедели")->toString().toInt()
+                             );
+    int mode;
+    if(!list.empty() && (mode = checkIdentical((ListEl*)list.back(), insert)))
+    {
+        ListEl * prev = (ListEl*)list.back();
+        switch(mode)
+        {
+        case 1: prev->setAud(prev->getAud() + ", " + insert->getAud());
+        case 2:
+            prev->setPrep(prev->getPrep().replace("<br>",", ") + insert->getPrep());
+            delete insert;
+            break;
+        }
+    } else {
+       list.append(insert);
+    }
+}
+
 
 void Backend::replyFinished(QNetworkReply * reply)
 {
@@ -86,125 +201,87 @@ void Backend::replyFinished(QNetworkReply * reply)
             delete x;
         downDataList.clear();
     }
-    QTextCodec * codec = QTextCodec::codecForName("Windows-1251");
-    QTextDecoder * decoder = new QTextDecoder(codec);
+    QJsonParseError jsonError;
+    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(),&jsonError);
+    if (jsonError.error != QJsonParseError::NoError){
+        qDebug() << jsonError.errorString();
+        }
 
-    bool readNextLine = false;
-    QVector<QString> data;
+    QMap<QString, QVariant> list = doc.toVariant().toMap();
+    auto kek = list.find("data")->toMap();
+    auto rasp = kek.find("rasp")->toList();
 
-    while (!reply->atEnd()) {
-           QString str = decoder->toUnicode(reply->readLine());
-           if(readNextLine)
-           {
-               data.push_back(str);
-               readNextLine = false;
-           }
-           if(str.contains("<tr id=\"ctl00_MainContent_RaspTable_DXDataRow"))
-               readNextLine = true;
-    }
-
-    QVector<Pair*> pairs;
-    bool twice = false;
-    QString * temp = nullptr;
-    for(auto it = data.begin(); it != data.end(); it++)
+    for(auto x : rasp)
     {
-        int count = it->count("dx-wrap dxgv");
-        for(int c = 0; c < count; c++)
+        auto map = x.toMap();
+        switch(map.find("типНедели")->toInt())
         {
-            int i, index = it->indexOf("class");
-            for(i = index; (*it)[i] != '>' && i != it->indexOf("rowspan",i); i++);
-            *it = it->remove(index, i - index);
-        }
-        int flag = 0;
-        if(!twice)
-        {
-            if(it->mid(it->indexOf('<'), 15).contains("rowspan")) {
-                pairs.append(new Pair(getTime(*it)));
-                getDayInfo(*it, flag);
-                twice = true;
-                temp = it;
-            } else {
-                pairs.append(new Pair(getTime(*it)));
-                getDayInfo(*it, flag);
-                for (int i = 0; i < 6; i++)
-                    pairs.last()->pushDay(getDayInfo(*it, flag), "", i);
-            }
-        } else {
-            getDayInfo(*it, flag);
-            for (int i = 0; i < 6; i++)
-            {
-                QString upper = getDayInfo(*temp, flag);
-                if(flag == 0)
-                    pairs.last()->pushDay(upper, "", i);
-                else if(flag == 2)
-                    pairs.last()->pushDay(upper, upper, i);
-                else if(flag == 1)
-                    pairs.last()->pushDay(upper, getDayInfo(*it, flag), i);
-            }
-            twice = false;
-        }
-
-    }
-
-    QVector<QList<ListEl*>> inter(6);
-    for(auto x : pairs)
-    {
-        auto up = x->getUpWeek();
-        for(int i = 0; i < 6; i++)
-        {
-            if(up[i] != "&nbsp;" && up[i] != "")
-                inter[i].append(new ListEl(up[i], x->getTime(), i));
+        case 1:
+            addToList(upDataList, map);
+            break;
+        case 2:
+            addToList(downDataList, map);
+            break;
+        case 0:
+            addToList(upDataList, map);
+            addToList(downDataList, map);
         }
     }
-    QFile upFile("upper.week");
-    if(!upFile.open(QIODevice::WriteOnly))
-        exit(-69);
-    QTextStream stream(&upFile);
-    for(int i = 0; i < 6; i++)
-    {
-        for(auto x : inter[i])
-        {
-            upDataList.append(x);
-            stream << x->getTime() << '|';
-            stream << x->getInfo() << '|';
-            stream << x->getDayNumber() << '~';
-        }
-        inter[i].clear();
-    }
-    upFile.close();
-
-    QFile downFile("bottom.week");
-    if(!downFile.open(QIODevice::WriteOnly))
-        exit(-69);
-    QTextStream bstream(&downFile);
-    for(auto x : pairs)
-    {
-        auto down = x->getDownWeek();
-        for(int i = 0; i < 6; i++)
-        {
-            if(down[i] != "&nbsp;" && down[i] != "")
-                inter[i].append(new ListEl(down[i], x->getTime(), i));
-        }
-    }
-    for(int i = 0; i < 6; i++)
-    {
-        for(auto x : inter[i])
-        {
-            downDataList.append(x);
-            bstream << x->getTime() << '|';
-            bstream << x->getInfo() << '|';
-            bstream << x->getDayNumber() << '~';
-        }
-        inter[i].clear();
-    }
-    downFile.close();
-
     emit upDataChanged();
     emit downDataChanged();
 
-    delete decoder;
-    for(auto x: pairs)
-        delete x;
+    QFile upFile("upper.week");
+    QFile downFile("bottom.week");
+    if(!upFile.open(QIODevice::WriteOnly) ||
+            !downFile.open(QIODevice::WriteOnly))
+        exit(-69);
+    QTextStream upStream(&upFile);
+    QTextStream downStream(&downFile);
+
+    for(auto & x : upDataList)
+    {
+        auto xp = (ListEl*)x;
+        upStream << xp->getTime() << "|";
+        upStream << xp->getInfo() << "|";
+        upStream << xp->getPrep() << "|";
+        upStream << xp->getAud() << "|";
+        upStream << xp->getWeekType() << "|";
+        upStream << xp->getDay() << "~";
+    }
+    upFile.close();
+    for(auto & x : downDataList)
+    {
+        auto xp = (ListEl*)x;
+        downStream << xp->getTime() << "|";
+        downStream << xp->getInfo() << "|";
+        downStream << xp->getPrep() << "|";
+        downStream << xp->getAud() << "|";
+        downStream << xp->getWeekType() << "|";
+        downStream << xp->getDay() << "~";
+    }
+    downFile.close();
+
+    QFile infFile("info.week");
+    infFile.open(QIODevice::WriteOnly);
+    QTextStream infStream(&infFile);
+    infStream << raspMode << "|" << (raspMode == 1 ? raspObj : prepId);
+    infFile.close();
+
+
+    auto info = kek.find("info")->toMap();
+    QFile weekFile("week.week");
+    weekFile.open(QIODevice::WriteOnly);
+    QTextStream weekStream(&weekFile);
+    QDate date(QDate::currentDate());
+    currentWeek = info.find("curNumNed")->toInt() % 2;
+    weekStream << (int)currentWeek << "|"
+               << date.dayOfWeek() << "|"
+               << date.dayOfYear() << "~";
+    weekFile.close();
+    firstLaunch = false;
+    emit curWeekChanged();
+    emit launchChanged();
+
 }
 
 QString Backend::getTime(QString &row)
@@ -239,4 +316,47 @@ Backend::~Backend()
 
     for(auto x: downDataList)
         delete x;
+
+    for(auto x : prepList)
+        delete x;
+}
+
+void Backend::searchPreps(QString txt)
+{
+    if(txt == "")
+        return;
+    prepObj = txt;
+    QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
+    connect(mgr, SIGNAL(finished(QNetworkReply*)),
+            this, SLOT(prepsReceived(QNetworkReply*)));
+
+    mgr->get(QNetworkRequest(QUrl("https://edu.donstu.ru/api/raspprepodlist")));
+}
+
+void Backend::prepsReceived(QNetworkReply *reply)
+{
+    if(!prepList.empty())
+    {
+        for(auto x : prepList)
+            delete x;
+        prepList.clear();
+    }
+
+    QJsonParseError jsonError;
+    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(),&jsonError);
+    if (jsonError.error != QJsonParseError::NoError){
+        qDebug() << jsonError.errorString();
+        }
+    QMap<QString, QVariant> list = doc.toVariant().toMap();
+    auto data = list.find("data")->toList();
+    for(auto & x: data)
+    {
+        auto map = x.toMap();
+        QString name = map.find("name")->toString();
+        if(name.contains(prepObj, Qt::CaseInsensitive))
+        {
+            prepList.append(new PrepEl(name + "  " + map.find("kaf")->toString(), map.find("id")->toString()));
+        }
+    }
+    emit prepListChanged();
 }

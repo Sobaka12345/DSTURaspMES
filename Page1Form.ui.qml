@@ -8,7 +8,7 @@ Page {
     height: 400
 
     header: Label {
-        text: qsTr("Верхняя неделя")
+        text: backend.currentWeek && !backend.firstLaunch ? "Верхняя неделя (Текущая)" : "Верхняя неделя"
         color: "white"
         font.pointSize: 16
         background: Rectangle {
@@ -64,7 +64,7 @@ Page {
                         border.color: "#301c0c"
                         color: "#9f926e"
                     }
-                    text: model.modelData.time
+                    text: model.modelData.para + "<br>" + model.modelData.time
                     wrapMode: "WordWrap"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
@@ -78,7 +78,7 @@ Page {
                         border.color: "#301c0c"
                         color: "#f7f7e2"
                     }
-                    text: model.modelData.info
+                    text: model.modelData.info + model.modelData.prep + model.modelData.aud
                     wrapMode: "WordWrap"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
