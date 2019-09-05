@@ -29,7 +29,7 @@ Page {
             width: 100
             height: 29
             color: "#ffffff"
-            text: qsTr("ver 2.1 (\/)_(*,,,*)_(\/)<br>by Egor MustLove")
+            text: qsTr("ver 2.1 (\\/)_(*,,,*)_(\\/)<br>by Egor MustLove")
             font.pixelSize: 11
         }
     }
