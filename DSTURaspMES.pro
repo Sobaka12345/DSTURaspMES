@@ -15,7 +15,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-    backend.cpp
+    backend.cpp \
+
 
 RESOURCES += qml.qrc
 
@@ -35,7 +36,7 @@ HEADERS += \
     backend.h \
     pair.h \
     list_el.h \
-    prep_el.h
+    prep_el.h \
 
 DISTFILES += \
     android/AndroidManifest.xml \
@@ -44,6 +45,20 @@ DISTFILES += \
     android/res/values/libs.xml \
     android/build.gradle \
     android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew.bat \
+    android/AndroidManifest.xml \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    arm/libcrypto.so \
+    arm/libssl.so \
+    x86/libcrypto.so \
+    x86/libssl.so \
+    android/gradlew \
+    android/res/values/libs.xml \
+    android/res/drawable-hdpi/icon.png \
+    android/res/drawable-ldpi/icon.png \
+    android/res/drawable-mdpi/icon.png \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/build.gradle \
     android/gradlew.bat
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
