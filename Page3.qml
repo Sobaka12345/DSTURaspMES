@@ -122,7 +122,7 @@ Page {
 
                     AnimatedImage {
                         id: load
-                        visible: false
+                        visible: backend.loadFlag
                         z: 1000
                         x:parent.width - 50
                         y: 3
@@ -148,7 +148,6 @@ Page {
 
                     onModelChanged:
                     {
-                        load.visible = false
                         backend.setIndex(model[0].id)
                     }
                     onActivated: {
@@ -163,7 +162,6 @@ Page {
                     Layout.preferredHeight: 26
                     Layout.preferredWidth: 100
                     onClicked: {
-                        load.visible = comboPrep.editText != ""
                         backend.searchPreps(comboPrep.editText)
                     }
                 }

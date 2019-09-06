@@ -33,7 +33,7 @@ void Backend::readWeekFile(QString file, QList<QObject *> &dest)
     }
 }
 
-Backend::Backend(QObject *parent) : QObject(parent)
+Backend::Backend(QObject *parent) : QObject(parent), loadFlag(false)
 {
     readWeekFile("upper.week", upDataList);
     readWeekFile("bottom.week", downDataList);
@@ -173,7 +173,7 @@ void Backend::addToList(QList<QObject *> &list, QMap<QString, QVariant> & map)
     auto insert = new ListEl(map.find("дисциплина")->toString() + "<br>",
                              map.find("начало")->toString() + " - " + map.find("конец")->toString(),
                              map.find("дата")->toString() == "" ? map.find("день_недели")->toString() : map.find("дата")->toString().left(10),
-                             raspMode == 1 ? map.find("преподаватель")->toString() + "<br>" : "",
+                             raspMode == 1 ? map.find("преподаватель")->toString() + "<br>" : map.find("группа")->toString() + "<br>",
                              map.find("аудитория")->toString(),
                              map.find("типНедели")->toString().toInt()
                              );
@@ -197,6 +197,8 @@ void Backend::addToList(QList<QObject *> &list, QMap<QString, QVariant> & map)
 
 void Backend::replyFinished(QNetworkReply * reply)
 {
+    if(reply->error() != QNetworkReply::NoError)
+            return;
     if(!upDataList.empty())
     {
         for(auto x : upDataList)
@@ -333,6 +335,8 @@ void Backend::searchPreps(QString txt)
 {
     if(txt == "")
         return;
+    loadFlag = true;
+    emit load();
     prepObj = txt;
     QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
     connect(mgr, SIGNAL(finished(QNetworkReply*)),
@@ -343,12 +347,19 @@ void Backend::searchPreps(QString txt)
 
 void Backend::prepsReceived(QNetworkReply *reply)
 {
+    if(reply->error() != QNetworkReply::NoError)
+    {
+       loadFlag = false;
+       emit load();
+       return;
+    }
     if(!prepList.empty())
     {
         for(auto x : prepList)
             delete x;
         prepList.clear();
     }
+
 
     QJsonParseError jsonError;
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(),&jsonError);
@@ -366,5 +377,7 @@ void Backend::prepsReceived(QNetworkReply *reply)
             prepList.append(new PrepEl(name + "  " + map.find("kaf")->toString(), map.find("id")->toString()));
         }
     }
+    loadFlag = false;
+    emit load();
     emit prepListChanged();
 }

@@ -24,6 +24,7 @@ class Backend : public QObject
     Q_PROPERTY(QList<QObject*> prepList READ getPreps NOTIFY prepListChanged)
     Q_PROPERTY(bool currentWeek READ getCurWeek NOTIFY curWeekChanged)
     Q_PROPERTY(bool firstLaunch READ isFirstLaunch NOTIFY launchChanged)
+    Q_PROPERTY(bool loadFlag READ isLoading NOTIFY load)
     QList<QObject*> upDataList;
     QList<QObject*> downDataList;
     QList<QObject*> prepList;
@@ -38,6 +39,7 @@ class Backend : public QObject
 
     QString raspObj, prepObj, prepId;
     int raspMode;
+    bool loadFlag;
 
 public:
     explicit Backend(QObject *parent = nullptr);
@@ -46,6 +48,7 @@ public:
     QList<QObject*> getPreps() { return prepList; }
     bool getCurWeek() const { return currentWeek; }
     bool isFirstLaunch() const { return firstLaunch; }
+    bool isLoading() const { return loadFlag; }
     ~Backend();
 
 signals:
@@ -54,6 +57,7 @@ signals:
     void prepListChanged();
     void curWeekChanged();
     void launchChanged();
+    void load();
 
 
 public slots:
