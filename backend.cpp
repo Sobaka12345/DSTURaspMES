@@ -52,10 +52,18 @@ Backend::Backend(QObject *parent) : QObject(parent)
         w = w.remove(w.indexOf("~"), 1);
         int yDay = w.toInt();
         int curYDay = QDate::currentDate().dayOfYear();
-        qDebug() << type;
+        int maxDay = QDate::isLeapYear(QDate::currentDate().year() - 1) ? 366 : 365;
+        if(curYDay < yDay)
+            curYDay += maxDay;
+        weekFile.seek(0);
         if((8 - wDay) <= curYDay - yDay)
         {
-            currentWeek = !type;
+            qDebug() << ((((curYDay - yDay) / 7) % 2 == 0) && (((curYDay - yDay) - 7 *((curYDay - yDay) / 7)) >= (8 - wDay)));
+            qDebug() << "\n" << ((((curYDay - yDay) / 7) % 2 != 0) && (((curYDay - yDay) - 7*((curYDay - yDay) / 7)) < (8 - wDay)));
+            if(((((curYDay - yDay) / 7) % 2 == 0) && (((curYDay - yDay) - 7 *((curYDay - yDay) / 7)) >= (8 - wDay))) ||
+                    ((((curYDay - yDay) / 7) % 2 != 0) && (((curYDay - yDay) - 7*((curYDay - yDay) / 7)) < (8 - wDay))))
+                currentWeek = !type;
+
             QTextStream wfStream(&weekFile);
             wfStream << currentWeek << "|"
                      << QDate::currentDate().dayOfWeek() << "|"
