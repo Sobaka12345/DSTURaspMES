@@ -1,4 +1,4 @@
 # DSTURaspMES
 A small program for viewing the schedule of my university
-![GitHub Logo](/images/Q4uYoVP_8qA.jpg | width=48) ![GitHub Logo](/images/SrCbO9jYCwM.jpg){:height="400px"}
+<img src="/images/Q4uYoVP_8qA.jpg" width=300 align=right> ![GitHub Logo](/images/SrCbO9jYCwM.jpg)
 
