@@ -87,6 +87,8 @@ void Backend::loadId(QString txt, int mode)
     QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
     connect(mgr, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(loadSchedule(QNetworkReply*)));
+    connect(mgr, SIGNAL(finished(QNetworkReply*)),
+            mgr, SLOT(deleteLater()));
 
     mgr->get(QNetworkRequest(QUrl(url)));
 
@@ -101,7 +103,7 @@ void Backend::setIndex(QString id)
 void Backend::loadSchedule(QNetworkReply * reply)
 {
     QString url("https://edu.donstu.ru/api/Rasp?");
-    if(raspMode == 1)
+    if(raspMode == 1 && reply != nullptr)
     {
         QString groups = reply->readAll();
         int index = groups.indexOf(raspObj.toUpper(), Qt::CaseSensitivity::CaseInsensitive);
@@ -117,7 +119,7 @@ void Backend::loadSchedule(QNetworkReply * reply)
             url += "idGroup=" + gr_id;
         }
     }
-    else if(raspMode == 2 && prepId != "")
+    else if((raspMode == 2 || reply == nullptr) && prepId != "")
     {
        url += "idPrepodLine=" + prepId;
     }
@@ -127,8 +129,11 @@ void Backend::loadSchedule(QNetworkReply * reply)
     QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
     connect(mgr, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(replyFinished(QNetworkReply*)));
+    connect(mgr, SIGNAL(finished(QNetworkReply*)),
+            mgr, SLOT(deleteLater()));
 
     mgr->get(QNetworkRequest(QUrl(url)));
+    reply->deleteLater();
 }
 
 void Backend::update()
@@ -146,6 +151,8 @@ void Backend::update()
             QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
             connect(mgr, SIGNAL(finished(QNetworkReply*)),
                     this, SLOT(loadSchedule(QNetworkReply*)));
+            connect(mgr, SIGNAL(finished(QNetworkReply*)),
+                    mgr, SLOT(deleteLater()));
 
             mgr->get(QNetworkRequest(QUrl(url)));
         }
@@ -198,7 +205,10 @@ void Backend::addToList(QList<QObject *> &list, QMap<QString, QVariant> & map)
 void Backend::replyFinished(QNetworkReply * reply)
 {
     if(reply->error() != QNetworkReply::NoError)
+    {
+            reply->deleteLater();
             return;
+    }
     if(!upDataList.empty())
     {
         for(auto x : upDataList)
@@ -213,6 +223,7 @@ void Backend::replyFinished(QNetworkReply * reply)
     }
     QJsonParseError jsonError;
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(),&jsonError);
+    reply->deleteLater();
     if (jsonError.error != QJsonParseError::NoError){
         qDebug() << jsonError.errorString();
         }
@@ -341,6 +352,8 @@ void Backend::searchPreps(QString txt)
     QNetworkAccessManager * mgr = new QNetworkAccessManager(this);
     connect(mgr, SIGNAL(finished(QNetworkReply*)),
             this, SLOT(prepsReceived(QNetworkReply*)));
+    connect(mgr, SIGNAL(finished(QNetworkReply*)),
+            mgr, SLOT(deleteLater()));
 
     mgr->get(QNetworkRequest(QUrl("https://edu.donstu.ru/api/raspprepodlist")));
 }
@@ -351,6 +364,7 @@ void Backend::prepsReceived(QNetworkReply *reply)
     {
        loadFlag = false;
        emit load();
+       reply->deleteLater();
        return;
     }
     if(!prepList.empty())
@@ -360,9 +374,9 @@ void Backend::prepsReceived(QNetworkReply *reply)
         prepList.clear();
     }
 
-
     QJsonParseError jsonError;
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll(),&jsonError);
+    reply->deleteLater();
     if (jsonError.error != QJsonParseError::NoError){
         qDebug() << jsonError.errorString();
         }

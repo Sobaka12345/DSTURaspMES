@@ -19,7 +19,7 @@ class ListEl : public QObject
 public:
     bool operator==(ListEl & obj)
     {
-        return (_info == obj.getInfo() &&
+        return (_info.remove(", п/г 1").remove(", п/г 2").trimmed() == obj.getInfo().remove(", п/г 1").remove(", п/г 2").trimmed() && // xD
                 _time == obj.getTime() &&
                 _day == obj.getDay() &&
                 _weekType == obj.getWeekType());
